@@ -524,4 +524,8 @@
 	<string name="info_chat_unsupported">Your server does not support this feature, or you are offline</string>
 	<string name="info_content_unavailable">Nothing here</string>
 	<string name="action_allow">Allow</string>
+	<string name="car_unnamed_playlist">Unnamed playlist</string>
+	<string name="car_recent">Recent</string>
+	<string name="car_sign_in">Open Navic on your phone and sign in to browse music.</string>
+	<string name="car_load_error">Could not load music. Check your connection and try again.</string>
 </resources>

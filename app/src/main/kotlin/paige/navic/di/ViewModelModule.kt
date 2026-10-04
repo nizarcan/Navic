@@ -58,7 +58,7 @@ val viewModelModule = module {
 			sessionManager = get(),
 			preferenceManager = get(),
 			snackBarManager = get(),
-			audioGainManager = get(),
+			mediaItemFactory = get(),
 		)
 	}
 

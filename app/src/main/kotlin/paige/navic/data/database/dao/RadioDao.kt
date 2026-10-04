@@ -26,6 +26,12 @@ interface RadioDao {
 	@Query("SELECT * FROM RadioEntity ORDER BY name ASC")
 	suspend fun getRadios(): List<RadioEntity>
 
+	@Query("SELECT * FROM RadioEntity WHERE radioId = :radioId LIMIT 1")
+	suspend fun getRadioById(radioId: String): RadioEntity?
+
+	@Query("SELECT * FROM RadioEntity WHERE radioId IN (:radioIds)")
+	suspend fun getRadiosByIds(radioIds: List<String>): List<RadioEntity>
+
 	@Query("SELECT * FROM RadioEntity ORDER BY name ASC")
 	fun getRadiosFlow(): Flow<List<RadioEntity>>
 

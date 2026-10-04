@@ -8,17 +8,15 @@ package paige.navic.shared
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import paige.navic.domain.manager.ConnectivityManager
 import paige.navic.domain.manager.DownloadManager
 import paige.navic.domain.manager.PreferenceManager
+import paige.navic.domain.model.DomainAlbum
 import paige.navic.domain.model.DomainExplicitStatus
 import paige.navic.domain.model.DomainRadio
 import paige.navic.domain.model.DomainSong
@@ -27,7 +25,6 @@ import paige.navic.domain.model.settings.ExplicitContentPlayback
 import paige.navic.domain.repository.PlayerStateRepository
 import paige.navic.domain.repository.SongRepository
 import paige.navic.ui.core.PlayerUiState
-import kotlin.time.Duration.Companion.seconds
 
 abstract class MediaPlayerViewModel(
 	private val stateRepository: PlayerStateRepository,
@@ -49,7 +46,6 @@ abstract class MediaPlayerViewModel(
 	init {
 		viewModelScope.launch {
 			restoreState()
-			observeAndSaveState()
 		}
 	}
 
@@ -73,26 +69,18 @@ abstract class MediaPlayerViewModel(
 	abstract fun shufflePlay(collection: DomainSongCollection)
 	abstract fun setPlaybackSpeed(value: Float)
 
-	fun playNow(song: DomainSong) {
-		clearQueue()
-		addToQueueSingle(song, notify = false)
-		playAt(0)
-		checkAndAutoFillQueue()
-	}
+	fun playNow(song: DomainSong) = playNow(listOf(song))
 
 	fun playNow(collection: DomainSongCollection, startIndex: Int = 0) {
-		clearQueue()
-		addToQueue(collection, notify = false)
-		playAt(startIndex)
-		checkAndAutoFillQueue()
+		val songs = if (collection is DomainAlbum) {
+			collection.songs.sortedWith(compareBy({ it.discNumber }, { it.trackNumber }))
+		} else {
+			collection.songs
+		}
+		playNow(songs, startIndex)
 	}
 
-	fun playNow(songs: List<DomainSong>, startIndex: Int = 0) {
-		clearQueue()
-		addToQueue(songs, notify = false)
-		playAt(startIndex)
-		checkAndAutoFillQueue()
-	}
+	abstract fun playNow(songs: List<DomainSong>, startIndex: Int = 0)
 
 	fun togglePlay() {
 		if (!uiState.value.isPaused) {
@@ -108,7 +96,7 @@ abstract class MediaPlayerViewModel(
 		if (!preferenceManager.autoFillQueue) return
 
 		val state = uiState.value
-		if (state.queue.isEmpty()) return
+		if (state.queue.isEmpty() || state.currentSong?.id?.startsWith("radio_") == true) return
 
 		val remainingCount = state.queue.size - state.currentIndex
 
@@ -124,31 +112,5 @@ abstract class MediaPlayerViewModel(
 		val savedState = stateRepository.state.first().copy(isPaused = true, isLoading = false)
 		_uiState.value = savedState
 		syncPlayerWithState(savedState)
-		checkAndAutoFillQueue()
-	}
-
-	@OptIn(FlowPreview::class)
-	private fun observeAndSaveState() {
-		viewModelScope.launch {
-			uiState
-				.distinctUntilChanged { old, new ->
-					old.currentIndex == new.currentIndex &&
-						old.queue == new.queue &&
-						old.isPaused == new.isPaused &&
-						old.repeatMode == new.repeatMode &&
-						old.isShuffleEnabled == new.isShuffleEnabled
-				}
-				.collect { state ->
-					stateRepository.setState(state)
-				}
-		}
-
-		viewModelScope.launch {
-			uiState
-				.debounce(2.seconds)
-				.collect { state ->
-					stateRepository.setState(state)
-				}
-		}
 	}
 }

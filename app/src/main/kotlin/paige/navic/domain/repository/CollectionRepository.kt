@@ -16,9 +16,11 @@ import paige.navic.data.database.dao.PlaylistDao
 import paige.navic.data.database.dao.SongDao
 import paige.navic.data.database.mapper.toDomainModel
 import paige.navic.data.database.mapper.toEntity
+import paige.navic.domain.manager.ConnectivityManager
 import paige.navic.domain.manager.SessionManager
 import paige.navic.domain.model.DomainAlbum
 import paige.navic.domain.model.DomainPlaylist
+import paige.navic.domain.model.DomainSong
 import paige.navic.domain.model.DomainSongCollection
 import paige.navic.ui.core.UiState
 import dev.zt64.subsonic.api.model.AlbumInfo as ApiAlbumInfo
@@ -28,7 +30,8 @@ class CollectionRepository(
 	private val playlistDao: PlaylistDao,
 	private val songDao: SongDao,
 	private val dbRepository: DbRepository,
-	private val sessionManager: SessionManager
+	private val sessionManager: SessionManager,
+	private val connectivityManager: ConnectivityManager
 ) {
 	suspend fun getLocalData(collectionId: String): DomainSongCollection {
 		return albumDao.getAlbumById(collectionId)?.toDomainModel()
@@ -36,23 +39,42 @@ class CollectionRepository(
 			?: throw Error("Collection ID $collectionId is neither a known album or playlist")
 	}
 
-	private suspend fun refreshLocalData(collectionId: String): DomainSongCollection {
-		when (val collection = getLocalData(collectionId)) {
-			is DomainAlbum -> {
-				val album = sessionManager.api.getAlbum(collection.id)
-				songDao.updateSongsByAlbumId(album.id, album.songs.map { it.toEntity() })
-				albumDao.insertAlbum(album.toEntity())
-				albumDao.getAlbumById(album.id)!!.toDomainModel()
-			}
+	suspend fun getAlbumSongs(id: String): List<DomainSong> {
+		val album = albumDao.getAlbumById(id)
+		val songs = songDao.getSongsByAlbumId(id).map { it.toDomainModel() }
+		val incomplete = songs.isEmpty() || songs.size < (album?.album?.songCount ?: 0)
+		val available = if (incomplete && connectivityManager.isOnline.value) {
+			refreshAlbum(id).songs
+		} else songs
+		return available.sortedWith(compareBy({ it.discNumber }, { it.trackNumber }, { it.title }))
+	}
 
-			is DomainPlaylist -> {
-				val playlist = sessionManager.api.getPlaylist(collection.id)
-				playlistDao.insertPlaylist(playlist.toEntity())
-				dbRepository.syncPlaylistSongs(collection.id)
-				playlistDao.getPlaylistById(playlist.id)!!.toDomainModel()
-			}
+	suspend fun getPlaylistSongs(id: String): List<DomainSong> {
+		val playlist = requireNotNull(playlistDao.getPlaylistById(id)).toDomainModel()
+		return if (playlist.songs.size < playlist.songCount && connectivityManager.isOnline.value) {
+			refreshPlaylist(id).songs
+		} else playlist.songs
+	}
+
+	private suspend fun refreshAlbum(id: String): DomainAlbum {
+		val album = sessionManager.api.getAlbum(id)
+		songDao.updateSongsByAlbumId(id, album.songs.map { it.toEntity() })
+		albumDao.insertAlbum(album.toEntity())
+		return requireNotNull(albumDao.getAlbumById(id)).toDomainModel()
+	}
+
+	private suspend fun refreshPlaylist(id: String): DomainPlaylist {
+		val playlist = sessionManager.api.getPlaylist(id)
+		playlistDao.insertPlaylist(playlist.toEntity())
+		dbRepository.syncPlaylistSongs(id).getOrThrow()
+		return requireNotNull(playlistDao.getPlaylistById(id)).toDomainModel()
+	}
+
+	private suspend fun refreshLocalData(collectionId: String): DomainSongCollection {
+		return when (val collection = getLocalData(collectionId)) {
+			is DomainAlbum -> refreshAlbum(collection.id)
+			is DomainPlaylist -> refreshPlaylist(collection.id)
 		}
-		return getLocalData(collectionId)
 	}
 
 	fun getCollectionFlow(

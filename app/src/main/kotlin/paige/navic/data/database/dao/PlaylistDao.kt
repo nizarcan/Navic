@@ -19,6 +19,9 @@ import paige.navic.util.Logger
 
 @Dao
 interface PlaylistDao {
+	@Query("SELECT * FROM PlaylistEntity ORDER BY name COLLATE NOCASE, playlistId")
+	fun observeBrowsablePlaylists(): Flow<List<PlaylistEntity>>
+
 	@Insert(onConflict = OnConflictStrategy.REPLACE)
 	suspend fun insertPlaylist(playlist: PlaylistEntity)
 

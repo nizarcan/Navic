@@ -17,9 +17,28 @@ import kotlinx.coroutines.flow.Flow
 import paige.navic.data.database.entity.AlbumEntity
 import paige.navic.data.database.relation.AlbumWithSongs
 import paige.navic.util.Logger
+import kotlin.time.Instant
 
 @Dao
 interface AlbumDao {
+	@Query("""
+		SELECT * FROM AlbumEntity WHERE lastPlayedAt IS NOT NULL
+		ORDER BY lastPlayedAt DESC, albumId LIMIT 100
+	""")
+	fun observeRecentAlbums(): Flow<List<AlbumEntity>>
+
+	@Query("""
+		SELECT * FROM AlbumEntity ORDER BY name COLLATE NOCASE, albumId
+		LIMIT :limit OFFSET :offset
+	""")
+	suspend fun getBrowsableAlbums(limit: Int, offset: Long): List<AlbumEntity>
+
+	@Query("SELECT * FROM AlbumEntity WHERE artistId = :artistId")
+	suspend fun getBrowsableAlbumsByArtist(artistId: String): List<AlbumEntity>
+
+	@Query("UPDATE AlbumEntity SET lastPlayedAt = :playedAt WHERE albumId = :albumId")
+	suspend fun markPlayed(albumId: String, playedAt: Instant)
+
 	@Transaction
 	@Query(" SELECT * FROM AlbumEntity WHERE genre = :genreName OR genres LIKE '%' || :genreName || '%' ORDER BY year DESC, name COLLATE NOCASE ASC")
 	fun getAlbumsByGenre(genreName: String): Flow<List<AlbumWithSongs>>

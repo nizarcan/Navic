@@ -40,13 +40,12 @@ import androidx.media3.extractor.text.DefaultSubtitleParserFactory
 import androidx.media3.extractor.ts.AdtsExtractor
 import androidx.media3.extractor.wav.WavExtractor
 import androidx.media3.session.CommandButton
-import androidx.media3.session.MediaSession
+import androidx.media3.session.MediaLibraryService
+import androidx.media3.session.MediaLibraryService.MediaLibrarySession
 import androidx.media3.session.SessionCommand
-import androidx.media3.session.SessionResult
 import androidx.media3.session.SessionToken
 import coil3.ImageLoader
-import com.google.common.util.concurrent.Futures
-import com.google.common.util.concurrent.ListenableFuture
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -68,51 +67,10 @@ class ExoStateHolder: KoinComponent {
 
 	// ExoPlaybackService and AudioGainManager depends on these fields below
 	lateinit var playerInstance: ExoPlayer
-	lateinit var mediaSession: MediaSession
+	lateinit var mediaSession: MediaLibrarySession
 
 	val gainProcessor = ExoAudioGainProcessor()
 
-
-	private class MediaSessionCallback(private val player: ExoPlayer) : MediaSession.Callback {
-		override fun onConnect(
-            session: MediaSession,
-            controller: MediaSession.ControllerInfo
-		): MediaSession.ConnectionResult {
-			val sessionCommands = MediaSession.ConnectionResult.DEFAULT_SESSION_AND_LIBRARY_COMMANDS
-				.buildUpon()
-				.add(SessionCommand(COMMAND_SHUFFLE, Bundle.EMPTY))
-				.add(SessionCommand(COMMAND_REPEAT, Bundle.EMPTY))
-				.build()
-
-			return MediaSession.ConnectionResult.accept(
-				sessionCommands,
-				MediaSession.ConnectionResult.DEFAULT_PLAYER_COMMANDS
-			)
-		}
-
-		override fun onCustomCommand(
-            session: MediaSession,
-            controller: MediaSession.ControllerInfo,
-            customCommand: SessionCommand,
-            args: Bundle
-		): ListenableFuture<SessionResult> {
-			when (customCommand.customAction) {
-				COMMAND_SHUFFLE -> {
-					player.shuffleModeEnabled = !player.shuffleModeEnabled
-				}
-
-				COMMAND_REPEAT -> {
-					player.repeatMode = when (player.repeatMode) {
-						Player.REPEAT_MODE_OFF -> Player.REPEAT_MODE_ALL
-						Player.REPEAT_MODE_ALL -> Player.REPEAT_MODE_ONE
-						else -> Player.REPEAT_MODE_OFF
-					}
-				}
-			}
-
-			return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
-		}
-	}
 
 	private val extractorsFactory = ExtractorsFactory {
         arrayOf(
@@ -245,7 +203,10 @@ class ExoStateHolder: KoinComponent {
 		return playerInstance
 	}
 
-	private suspend fun createMediaSession(): MediaSession = mutex.withLock {
+	private suspend fun createMediaSession(
+		service: MediaLibraryService,
+		scope: CoroutineScope
+	): MediaLibrarySession = mutex.withLock {
 		val bitmapLoader = ExoArtworkLoader(
 			context,
 			dataSourceFactory = DefaultDataSource.Factory(context, httpDataSourceFactory),
@@ -266,12 +227,13 @@ class ExoStateHolder: KoinComponent {
 		)
 
 		this.playerInstance.let {
-			mediaSession = MediaSession.Builder(context, it)
+			val callback = CarMediaLibraryCallback(context, scope)
+			mediaSession = MediaLibrarySession.Builder(service, it, callback)
 				.setSessionActivity(sessionPendingIntent)
 				.setBitmapLoader(bitmapLoader)
-				.setCallback(MediaSessionCallback(it))
 				.setCustomLayout(makeButtons(it))
 				.build()
+			callback.attach(mediaSession)
 		}
 
 		return mediaSession
@@ -280,11 +242,11 @@ class ExoStateHolder: KoinComponent {
 	/**
 	 * initializes instances for the player and the media session, should be called ASAP on PlaybackService (onCreate)
 	 */
-	fun initState() = runBlocking {
+	fun initState(service: MediaLibraryService, scope: CoroutineScope) = runBlocking {
         if (isInitialized) return@runBlocking
 
         createPlayerInstance()
-        createMediaSession()
+        createMediaSession(service, scope)
         isInitialized = !isInitialized
     }
 

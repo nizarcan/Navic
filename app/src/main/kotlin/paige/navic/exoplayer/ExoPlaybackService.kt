@@ -10,8 +10,8 @@ import android.content.Intent
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.DefaultMediaNotificationProvider
+import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaSession
-import androidx.media3.session.MediaSessionService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
@@ -21,16 +21,19 @@ import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import paige.navic.R
+import paige.navic.data.database.dao.AlbumDao
 import paige.navic.domain.manager.AndroidScrobbleManager
+import paige.navic.domain.manager.AudioGainManager
 import paige.navic.domain.manager.ConnectivityManager
 import paige.navic.domain.manager.EqualizerManager
 import paige.navic.domain.manager.PreferenceManager
 import paige.navic.domain.manager.SessionManager
 import paige.navic.domain.manager.SyncManager
+import paige.navic.domain.repository.PlayerStateRepository
 import paige.navic.exoplayer.impl.ExoEqualizerManager
 
 @UnstableApi
-class ExoPlaybackService : MediaSessionService(), KoinComponent {
+class ExoPlaybackService : MediaLibraryService(), KoinComponent {
 	private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
 
 	private val serviceScope = MainScope()
@@ -43,6 +46,10 @@ class ExoPlaybackService : MediaSessionService(), KoinComponent {
 	private val sessionManager: SessionManager by inject()
 	private val preferenceManager: PreferenceManager by inject()
 	private val equalizerManager: EqualizerManager by inject()
+	private val playerStateRepository: PlayerStateRepository by inject()
+	private val mediaItemFactory: MediaItemFactory by inject()
+	private val albumDao: AlbumDao by inject()
+	private val audioGainManager: AudioGainManager by inject()
 
 	private lateinit var exoEqualizerManager: ExoEqualizerManager
 
@@ -51,10 +58,10 @@ class ExoPlaybackService : MediaSessionService(), KoinComponent {
 	override fun onCreate() {
 		super.onCreate()
 		exoEqualizerManager = ExoEqualizerManager(
-            equalizerManager,
-            this
-        )
-		stateHolder.initState()
+			equalizerManager,
+			this
+		)
+		stateHolder.initState(this, serviceScope)
 
 		val notificationProvider = DefaultMediaNotificationProvider.Builder(this)
 			.build().apply {
@@ -66,14 +73,24 @@ class ExoPlaybackService : MediaSessionService(), KoinComponent {
 		stateHolder.playerInstance.let { player ->
 			player as Player
 
+			PlaybackStateObserver(
+				player,
+				serviceScope,
+				playerStateRepository,
+				mediaItemFactory,
+				albumDao,
+				preferenceManager,
+				audioGainManager
+			).start()
+
 			scrobbleManager = AndroidScrobbleManager(
-                player,
-                serviceScope,
-                connectivityManager,
-                syncManager,
-                sessionManager,
-                preferenceManager
-            )
+				player,
+				serviceScope,
+				connectivityManager,
+				syncManager,
+				sessionManager,
+				preferenceManager
+			)
 
 			player.addListener(exoEqualizerManager)
 
@@ -86,17 +103,18 @@ class ExoPlaybackService : MediaSessionService(), KoinComponent {
 		}
 	}
 
-	override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession {
+	override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession {
 		return stateHolder.mediaSession
 	}
 
 	override fun onTaskRemoved(rootIntent: Intent?) {
-		pauseAllPlayersAndStopSelf()
+		if (!isPlaybackOngoing) pauseAllPlayersAndStopSelf()
 	}
 
 	override fun onDestroy() {
 		exoEqualizerManager.releaseEqualizer()
 		scrobbleManager.release()
+		scope.cancel()
 		serviceScope.cancel()
 		stopForeground(STOP_FOREGROUND_REMOVE)
 		stateHolder.destroySession()
