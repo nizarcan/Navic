@@ -25,12 +25,13 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import org.koin.compose.koinInject
+import paige.navic.BuildConfig
 import paige.navic.R
 import paige.navic.di.LocalSizeClass
-import paige.navic.domain.manager.PreferenceManager
-import paige.navic.generated.BuildInfo
+import paige.navic.domain.manager.runtime.PreferenceManager
 import paige.navic.ui.component.common.SegmentedListItem
 import paige.navic.ui.component.common.SegmentedListItemDefaults
 import paige.navic.ui.component.dialog.LinkConfirmationDialog
@@ -40,6 +41,8 @@ import paige.navic.ui.screen.settings.component.SettingsGroup
 import paige.navic.ui.screen.settings.component.SettingsGroupDefaults
 import paige.navic.ui.screen.settings.component.SettingsNavItem
 import paige.navic.ui.screen.settings.component.SettingsToggleItem
+
+const val CODEBERG_BASE_URL = "https://codeberg.org/paige/Navic/"
 
 @Composable
 fun SettingsAboutScreen() {
@@ -92,25 +95,69 @@ fun SettingsAboutScreen() {
 				)
 			}
 
+			// TODO: make this less ass
+			if (BuildConfig.GIT_COMMIT_HASH != "unknown") {
+				val commitLink = "${CODEBERG_BASE_URL}commit/${BuildConfig.GIT_COMMIT_HASH}"
+				val branchName = BuildConfig.GIT_BRANCH_NAME
+				val commitAuthor = BuildConfig.GIT_COMMIT_AUTHOR
+
+				SettingsGroup {
+					SettingsNavItem(
+						onClick = { linkToOpen = commitLink },
+						shapes = SegmentedListItemDefaults.segmentedShapes(index = 0, count = 4),
+						content = { Text(stringResource(R.string.title_commit_hash)) },
+						supportingContent = { Text(BuildConfig.GIT_COMMIT_HASH.slice(0..6)) }
+					)
+					SettingsNavItem(
+						onClick = { linkToOpen = commitLink },
+						shapes = SegmentedListItemDefaults.segmentedShapes(index = 1, count = 4),
+						content = { Text(stringResource(R.string.title_commit_message)) },
+						supportingContent = {
+							Text(
+								text = BuildConfig.GIT_COMMIT_MESSAGE.split("\n").firstOrNull()
+									?: "unknown",
+								maxLines = 1,
+								overflow = TextOverflow.Ellipsis
+							)
+						}
+					)
+					SettingsNavItem(
+						onClick = { linkToOpen = "${CODEBERG_BASE_URL}src/branch/${branchName}" },
+						shapes = SegmentedListItemDefaults.segmentedShapes(index = 2, count = 4),
+						content = { Text(stringResource(R.string.title_branch_name)) },
+						supportingContent = { Text(BuildConfig.GIT_BRANCH_NAME) }
+					)
+					SettingsNavItem(
+						onClick = {
+							linkToOpen =
+								"${CODEBERG_BASE_URL}commits/${branchName}/?author=${commitAuthor}"
+						},
+						shapes = SegmentedListItemDefaults.segmentedShapes(index = 3, count = 4),
+						content = { Text(stringResource(R.string.title_commit_author)) },
+						supportingContent = { Text(commitAuthor) }
+					)
+				}
+			}
+
 			SettingsGroup {
 				SettingsNavItem(
-					onClick = { linkToOpen = "https://github.com/ssalggnikool/Navic" },
-					shapes = SegmentedListItemDefaults.segmentedShapes(index = 0, count = 4),
-					content = { Text(stringResource(R.string.title_github)) }
-				)
-				SettingsNavItem(
 					onClick = { linkToOpen = "https://codeberg.org/paige/Navic" },
-					shapes = SegmentedListItemDefaults.segmentedShapes(index = 1, count = 4),
+					shapes = SegmentedListItemDefaults.segmentedShapes(index = 0, count = 3),
 					content = { Text(stringResource(R.string.title_codeberg)) }
 				)
 				SettingsNavItem(
+					onClick = { linkToOpen = "https://matrix.to/#/#navic:suicide.diy" },
+					shapes = SegmentedListItemDefaults.segmentedShapes(index = 1, count = 3),
+					content = { Text(stringResource(R.string.title_matrix_space)) }
+				)
+				SettingsNavItem(
 					onClick = { linkToOpen = "https://discord.gg/TBcnNX66PH" },
-					shapes = SegmentedListItemDefaults.segmentedShapes(index = 2, count = 3),
+					shapes = SegmentedListItemDefaults.segmentedShapes(index = 2, count = 2),
 					content = { Text(stringResource(R.string.title_discord_server)) }
 				)
 			}
 
-			if (!BuildInfo.FDROID) {
+			if (!BuildConfig.FDROID) {
 				SettingsGroup {
 					SettingsToggleItem(
 						content = { Text(stringResource(R.string.option_check_for_updates)) },
@@ -124,10 +171,8 @@ fun SettingsAboutScreen() {
 		}
 	}
 
-	if (linkToOpen != null) {
-		LinkConfirmationDialog(
-			linkToOpen = linkToOpen!!,
-			onDismissRequest = { linkToOpen = null }
-		)
-	}
+	LinkConfirmationDialog(
+		linkToOpen = linkToOpen,
+		onDismissRequest = { linkToOpen = null }
+	)
 }

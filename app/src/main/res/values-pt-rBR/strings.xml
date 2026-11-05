@@ -49,7 +49,6 @@
     <string name="option_scrobble_percentage">Porcentagem para scrobble</string>
     <string name="option_min_duration_to_scrobble">Duração mínima para scrobble</string>
     <string name="option_playlist_name">Título</string>
-    <string name="option_playlist_songs">Músicas</string>
     <string name="option_enable_scrobbling">Ativar scrobbling</string>
     <string name="option_choose_theme">Escolher tema</string>
     <string name="theme_dynamic">Dinâmico</string>
@@ -59,14 +58,12 @@
     <string name="theme_spotify">Spotlight</string>
     <string name="action_new">Novo</string>
     <string name="action_shuffle">Aleatório</string>
-    <string name="action_repeat">Repetir</string>
     <string name="action_delete">Apagar</string>
     <string name="action_cancel">Cancelar</string>
     <string name="action_refresh">Atualizar</string>
     <string name="action_share">Compartilhar</string>
     <string name="action_track_info">Ver detalhes da faixa</string>
     <string name="action_view_album">Ver álbum</string>
-    <string name="action_view_playlist">Ver playlist</string>
     <string name="action_view_artist">Ver artista</string>
     <string name="action_star">Favoritar</string>
     <string name="action_remove_star">Remover favorito</string>
@@ -77,7 +74,6 @@
     <string name="action_more">Mais</string>
     <string name="action_add_to_playlist">Adicionar à playlist</string>
     <string name="action_add_to_another_playlist">Adicionar à outra playlist</string>
-    <string name="action_add_all_to_playlist">Adicionar tudo à playlist</string>
     <string name="action_remove_from_playlist">Remover da playlist</string>
     <string name="action_see_all">Ver tudo</string>
     <string name="action_view_on_lastfm">Ver no last.fm</string>
@@ -93,9 +89,7 @@
     <string name="info_action_is_permanent">Essa ação não pode ser desfeita!</string>
     <string name="info_error">Algo deu errado.</string>
     <string name="info_error_show">Mostrar detalhes</string>
-    <string name="info_error_hide">Esconder detalhes</string>
     <string name="info_unknown">Desconhecido</string>
-    <string name="info_unknown_album">Álbum desconhecido</string>
     <string name="info_unknown_year">Ano desconhecido</string>
     <string name="info_unknown_genre">Gênero desconhecido</string>
     <string name="info_not_playing">Nenhuma música tocando</string>
@@ -118,7 +112,6 @@
     <string name="title_shares">Compartilhamentos</string>
     <string name="title_choose_font">Fonte do aplicativo</string>
     <string name="title_fonts_inbuilt">Embutidas</string>
-    <string name="title_fonts_external">Externas</string>
     <string name="title_more_by_artist">Mais de %1$s</string>
     <string name="title_genres">Gêneros</string>
     <string name="title_navigation_bar">Barra de navegação</string>
@@ -171,7 +164,6 @@
     <string name="info_track_replay_gain_effective">Valor efetivo de ReplayGain</string>
     <string name="info_shared_by">Compartilhado por %1$s</string>
     <string name="info_share_expires_in">Expira em %1$s</string>
-    <string name="info_share_expires_never">Nunca expira</string>
     <string name="info_share_expired">Expirado</string>
     <string name="info_no_shares">Sem compartilhamentos</string>
     <string name="info_no_lyrics">Sem letras</string>
@@ -181,7 +173,6 @@
     <string name="info_no_genres">Sem gêneros</string>
     <string name="info_no_playlists_short">Sem playlists</string>
     <string name="info_lyrics_provider">Letras de %1$s</string>
-    <string name="info_image_failed_to_load">Carregamento falhou</string>
     <string name="title_data_storage">Dados e armazenamento</string>
     <string name="title_update">Atualização disponível</string>
     <string name="title_sort_by">Ordenar por</string>
@@ -191,9 +182,8 @@
     <string name="title_bulk_download">Baixar todos os álbuns</string>
     <string name="title_direction">Direção</string>
     <string name="title_confirm">Confirmar</string>
-    <string name="title_cache_management">Gerenciamento de armazenamento e cache</string>
+    <string name="title_cache_management">Gerenciamento de cache</string>
     <string name="title_danger_zone">Zona crítica</string>
-    <string name="title_changelog">Notas da versão</string>
     <string name="info_update">A versão %1$s está disponível</string>
     <string name="info_no_songs">Sem músicas</string>
     <string name="info_no_radios">Sem rádios</string>
@@ -206,7 +196,6 @@
     <string name="action_add_to_queue">Adicionar à fila</string>
     <string name="action_dont_show_again">Não mostrar novamente</string>
     <string name="info_not_available_offline">Não disponível offline</string>
-    <string name="info_syncing_saving">Salvando...</string>
     <string name="info_click_to_retry">Clique para tentar novamente</string>
     <string name="info_download_failed">Falha no download</string>
     <string name="info_downloaded">Baixado</string>
@@ -237,7 +226,6 @@
     <string name="info_sync_just_now">Agora mesmo</string>
     <string name="option_last_sync">Última sincronização completa</string>
     <string name="option_radio_stream_url">URL de transmissão</string>
-    <string name="option_replay_gain">ReplayGain</string>
     <string name="option_live_status">Status ao vivo</string>
     <string name="option_image_cache_size">Tamanho do cache de imagens</string>
     <string name="option_custom_headers">Cabeçalhos personalizados do servidor</string>
@@ -271,7 +259,6 @@
     <string name="option_mini_player_style_detached">Destacado</string>
     <string name="option_mini_player_progress_style">Visibilidade da barra de progresso</string>
     <string name="option_mini_player_progress_style_hidden">Oculto</string>
-    <string name="option_mini_player_progress_style_visible">Visível</string>
     <string name="action_download">Baixar</string>
     <string name="action_delete_download">Deletar download</string>
     <string name="action_cancel_download">Cancelar download</string>
@@ -319,10 +306,6 @@
     <plurals name="count_albums">
         <item quantity="one">%1$d álbum</item>
         <item quantity="other">%1$d álbuns</item>
-    </plurals>
-    <plurals name="count_playlists">
-        <item quantity="one">%1$d playlist</item>
-        <item quantity="other">%1$d playlists</item>
     </plurals>
     <plurals name="count_artists">
         <item quantity="one">%1$d artista</item>
@@ -374,17 +357,10 @@
     <string name="info_download_quality">Predefinições de qualidade mais altas utilizam mais espaço e dados. A transcodificação pode aumentar o tempo de download. Selecione "Lossless" se encontrar algum problema.</string>
     <string name="notice_added_to_queue">Adicionado à fila.</string>
     <string name="option_choose_app_icon">Ícone do aplicativo</string>
-    <string name="option_max_bitrate_wifi">Bitrate máximo em Wi-fi (kbps)</string>
-    <string name="option_max_bitrate_cellular">Bitrate máximo em dados móveis (kbps)</string>
-    <string name="option_stream_format_wifi">Formato da stream Wi-fi</string>
-    <string name="option_download_format_cellular">Formato do download Dados Móveis</string>
-    <string name="option_stream_format_cellular">Formato da stream em dados móveis</string>
-    <string name="option_download_format_wifi">Formato do download em Wi-fi</string>
     <string name="info_external_song">Externa</string>
     <string name="info_external_song_description">Essa música foi marcada como externa pelo seu servidor, então talvez não seja possível você ouvi-la.</string>
     <string name="info_transcoding_defaults">Deixar vazio quaisquer das opções irá omitir elas e permitir que o servidor decida.</string>
     <string name="option_palette_style">Estilo da paleta</string>
-    <string name="action_start">Iniciar</string>
     <string name="action_ok">OK</string>
     <string name="action_play">Reproduzir</string>
     <string name="action_pause">Pausar</string>
@@ -418,9 +394,6 @@
     <string name="action_sleep_timer_queue_enabled">Timer de repouso - fim da fila</string>
     <string name="title_sleep_timer_time">Tempo</string>
     <string name="action_sleep_timer_queue">Parar no final da fila atual</string>
-    <string name="action_sleep_timer_songs">Parar após %1$d músicas</string>
-    <string name="option_mini_player_progress_style_seekable">Navegável</string>
-    <string name="title_github">GitHub</string>
     <string name="title_codeberg">Codeberg</string>
     <string name="title_audio_effects">Efeitos de áudio</string>
     <string name="subtitle_audio_effects">Ajuste o som da música</string>
@@ -432,4 +405,43 @@
     <string name="option_dynamic_replaygain_tip">Configurar o ReplayGain para Dinâmico irá utilizar o ganho do álbum se um álbum estiver sendo tocado. Caso contrário, o ganho da faixa será utilizado.</string>
     <string name="action_scroll_down">Descer para baixo</string>
     <string name="action_reset_dont_show_agains">Resetar diálogos de "não mostrar novamente"</string>
+    <string name="title_delete_radio">Deletar rádio?</string>
+    <string name="title_delete_download">Deletar download?</string>
+    <string name="title_update_radio">Atualizar rádio</string>
+    <string name="title_statistics">Estatísticas</string>
+    <string name="title_top_songs">Músicas mais ouvidas</string>
+    <string name="title_top_artists">Artistas mais ouvidos</string>
+    <string name="title_top_albums">Álbuns mais ouvidos</string>
+    <string name="title_chat">Bate-papo</string>
+    <string name="title_change_download_location">Mover downloads?</string>
+    <string name="subtitle_notifications_denied">Você precisa conceder a permissão de notificação para receber notificações de download e sincronização.</string>
+    <string name="subtitle_equalizer">Tunar &amp; aprimorar áudio</string>
+    <string name="subtitle_equalizer_disabled">Não disponível enquanto offload de áudio estiver habilitado</string>
+    <string name="subtitle_enable_ratings">Ativar classificação de 5 estrelas</string>
+    <string name="subtitle_custom_headers">Informações adicionais preenchidas em cada requisição</string>
+    <string name="subtitle_ignore_ssl_certificates">Apenas habilite isso caso sabia o que está fazendo. Útil caso esteja usando um proxy para inspecionar requisições.</string>
+    <string name="subtitle_enable_discord_integration">Mostre no Discord qual música você está ouvindo no momento</string>
+    <string name="subtitle_download_location">Onde novos downloads são salvos</string>
+    <string name="subtitle_sd_card_unavailable">Nenhum cartão SD detectado; downloads irão usar espaço interno</string>
+    <string name="subtitle_confirm_download_deletion">Escolher quando pedir por confirmação antes de deletar downloads</string>
+    <string name="option_hide_bottom_bar_if_idle">Esconder caso esteja ocioso</string>
+    <string name="option_account_instance">URL da instância</string>
+    <string name="option_lyrics_fake_beat_by_beat">Efeito falso de batida por batida</string>
+    <string name="subtitle_lyrics_fake_beat_by_beat">Simular timing por palavra caso não esteja disponível</string>
+    <string name="option_streaming_cache">Cache de streaming</string>
+    <string name="option_download_location">Local de download</string>
+    <string name="option_download_storage_internal">Espaço interno</string>
+    <string name="option_download_storage_external">Cartão SD</string>
+    <string name="option_confirm_download_deletion">Confirmar exclusão do download</string>
+    <string name="option_connection_options">Opções de conexão</string>
+    <string name="subtitle_connection_options">URLs do servidor, proxy e headers customizados</string>
+    <string name="option_max_bitrate">Bitrate máximo (kbps)</string>
+    <string name="option_stream_format">Formato da stream</string>
+    <string name="option_download_format">Formato do download</string>
+    <string name="option_use_amoled_theme">Usar tema AMOLED</string>
+    <string name="option_equalizer">Equalizador</string>
+    <string name="option_equalizer_mode">Modo do equalizador</string>
+    <string name="option_equalizer_mode_disabled">Desativado</string>
+    <string name="option_equalizer_mode_builtin">Embutido</string>
+    <string name="option_equalizer_mode_external">Externo</string>
 </resources>

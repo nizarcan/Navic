@@ -10,6 +10,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.SerializationException
@@ -24,25 +25,25 @@ class PlayerStateRepository(
 		ignoreUnknownKeys = true
 	}
 
-	val state: Flow<PlayerUiState> = preferences.data.map {
-		try {
-			json.decodeFromString<PlayerUiState>(
-				it[KEY_STATE] ?: return@map PlayerUiState()
-			)
+	val state: Flow<PlayerUiState> = preferences.data.map { decodeState(it[KEY_STATE]) }
+
+	private fun decodeState(value: String?): PlayerUiState {
+		if (value == null) return PlayerUiState()
+		return try {
+			json.decodeFromString<PlayerUiState>(value)
 		} catch (ex: SerializationException) {
 			Logger.e("PlayerStateRepository", "failed to deserialise state", ex)
-			PlayerUiState()
-		} catch (ex: Exception) {
-			Logger.e("PlayerStateRepository", "failed to read state", ex)
 			PlayerUiState()
 		}
 	}
 
-	suspend fun setState(value: PlayerUiState) {
+	suspend fun updateState(transform: (PlayerUiState) -> PlayerUiState) {
 		try {
-			preferences.edit { it[KEY_STATE] = json.encodeToString(value) }
-		} catch (ex: SerializationException) {
-			Logger.e("PlayerStateRepository", "failed to serialise state", ex)
+			preferences.edit {
+				it[KEY_STATE] = json.encodeToString(transform(decodeState(it[KEY_STATE])))
+			}
+		} catch (ex: CancellationException) {
+			throw ex
 		} catch (ex: Exception) {
 			Logger.e("PlayerStateRepository", "failed to save state", ex)
 		}

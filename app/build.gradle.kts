@@ -4,10 +4,6 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
-import com.android.build.api.variant.impl.VariantOutputImpl
-import com.google.devtools.ksp.gradle.KspAATask
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
-
 plugins {
 	alias(libs.plugins.android.application)
 	alias(libs.plugins.compose.compiler)
@@ -24,54 +20,12 @@ configurations.all {
 	resolutionStrategy.cacheChangingModulesFor(1, "hours")
 }
 
-val generateBuildInfo = tasks.register("generateBuildInfo", Sync::class) {
-	description = "generate BuildInfo.kt"
-
-	val fdroid = System.getenv("FDROID") == "true" || providers.gradleProperty("fdroid")
-		.map { it.toBoolean() }
-		.getOrElse(false)
-
-	from(
-		resources.text.fromString(
-			"""
-			|package paige.navic.generated
-			|
-			|object BuildInfo {
-			|	const val FDROID = $fdroid
-			|}
-			|
-			""".trimMargin()
-		)
-	) {
-		rename { "BuildInfo.kt" }
-		into("paige/navic/generated")
-	}
-
-	into(layout.buildDirectory.dir("generated/buildInfo/commonMain/kotlin"))
-}
-
-tasks.withType<KotlinCompilationTask<*>>().configureEach {
-	dependsOn(generateBuildInfo)
-}
-
-// no idea why ksp tasks depend on this
-tasks.withType<KspAATask>().configureEach {
-	dependsOn(generateBuildInfo)
-}
-
-android.sourceSets.named("main") {
-	kotlin.directories.add(generateBuildInfo.map { it.destinationDir }.get().absolutePath)
-}
-
 kotlin {
 	jvmToolchain(21)
 }
 
-val isTaskRelease = gradle.startParameter.taskNames.any { it.contains("release", ignoreCase = true) }
-
-val fdroid = System.getenv("FDROID") == "true" || providers.gradleProperty("fdroid")
-	.map { it.toBoolean() }
-	.getOrElse(false)
+val isTaskRelease =
+	gradle.startParameter.taskNames.any { it.contains("release", ignoreCase = true) }
 
 android {
 	namespace = "paige.navic"
@@ -80,14 +34,15 @@ android {
 
 	buildFeatures {
 		resValues = true
+		buildConfig = true
 	}
 
 	defaultConfig {
 		applicationId = "paige.navic"
 		minSdk = libs.versions.android.minSdk.get().toInt()
 		targetSdk = libs.versions.android.targetSdk.get().toInt()
-		versionCode = 59
-		versionName = "v1.0.0-alpha59"
+		versionCode = 61
+		versionName = "v1.0.0-beta02"
 		multiDexEnabled = true
 
 		ndk {
@@ -126,6 +81,53 @@ android {
 		}
 	}
 
+	defaultConfig {
+		fun String?.wrapString(): String = this?.let {
+			val escaped = it
+				.removeSuffix("\n")
+				.replace("\\", "\\\\")
+				.replace("\n", "\\n")
+				.replace("\"", "\\\"")
+			"\"$escaped\""
+		} ?: "null"
+
+		fun executeCommand(vararg args: String): String? {
+			val command = Runtime.getRuntime().exec(args)
+			val result = command.waitFor()
+			return if (result == 0) {
+				command.inputStream.readBytes()
+					.toString(Charsets.UTF_8)
+					.takeIf { it.isNotBlank() }
+			} else {
+				null
+			}
+		}
+
+		val commitHash = executeCommand("git", "rev-parse", "HEAD")
+		val commitMessage = executeCommand("git", "log", "-1", "--pretty=%B")
+		val commitAuthor = executeCommand("git", "log", "-1", "--pretty=%an")
+		val commitBranchName = executeCommand("git", "branch", "--show-current")
+
+		buildConfigField("String", "GIT_COMMIT_HASH", commitHash?.wrapString() ?: "\"unknown\"")
+		buildConfigField("String", "GIT_COMMIT_MESSAGE", commitMessage?.wrapString() ?: "\"unknown\"")
+		buildConfigField("String", "GIT_COMMIT_AUTHOR", commitAuthor?.wrapString() ?: "\"unknown\"")
+		buildConfigField("String", "GIT_BRANCH_NAME", commitBranchName?.wrapString() ?: "\"unknown\"")
+	}
+
+	flavorDimensions += "version"
+	productFlavors {
+		create("default") {
+			dimension = "version"
+			isDefault = true
+			buildConfigField("boolean", "FDROID", "false")
+		}
+		create("fdroid") {
+			dimension = "version"
+			description = "removes Discord RPC and update checker features"
+			buildConfigField("boolean", "FDROID", "true")
+		}
+	}
+
 	packaging {
 		resources {
 			excludes += "/okhttp3/**"
@@ -159,12 +161,10 @@ android {
 androidComponents {
 	onVariants { variant ->
 		variant.outputs.forEach { output ->
-			if (output is VariantOutputImpl) {
-				output.outputFileName = if (fdroid) {
-					"Navic.fdroid.apk"
-				} else {
-					"Navic.apk"
-				}
+			output.outputFileName = if (variant.flavorName == "fdroid") {
+				"Navic.fdroid.apk"
+			} else {
+				"Navic.apk"
 			}
 		}
 	}
@@ -202,12 +202,14 @@ dependencies {
 	implementation(libs.androidx.navigation3.ui)
 	implementation(libs.androidx.media3.exoplayer)
 	implementation(libs.androidx.media3.session)
-	implementation(libs.androidx.media3.ktor)
+	implementation(libs.androidx.media3.datasource.okhttp)
 	implementation(libs.androidx.media3.decoder.ffmpeg)
 	implementation(libs.androidx.annotation)
+	implementation(libs.androidx.recyclerview)
 	implementation(libs.androidx.glance.appwidget)
 	implementation(libs.androidx.glance.material3)
 	implementation(libs.androidx.browser)
+	implementation(libs.androidx.work.runtime.ktx)
 
 	// Kotlinx
 	implementation(libs.kotlinx.datetime)
@@ -224,19 +226,27 @@ dependencies {
 	implementation(libs.coil.gif)
 
 	// Compose 3rd party
-	implementation(libs.capsule)
 	implementation(libs.kmpalette.core)
 	implementation(libs.kmpalette.network)
 	implementation(libs.materialKolor)
 	implementation(libs.composePipette)
 	implementation(libs.multiplatformSettings)
 
+	// Paging
+	implementation(libs.androidx.paging.common)
+	implementation(libs.androidx.paging.compose)
+	implementation(libs.androidx.room3.paging)
+
 	// Misc
 	implementation(libs.koin.core)
 	implementation(libs.koin.android)
 	implementation(libs.koin.compose)
 	implementation(libs.koin.compose.viewmodel)
+	implementation(libs.koin.androidx.workmanager)
 	implementation(libs.subsonicKotlin)
+	"defaultImplementation"(libs.antisocialcord)
 	ksp(libs.androidx.room3.compiler)
+	implementation(libs.cryptohash)
+	implementation(libs.mimetypes)
 	coreLibraryDesugaring(libs.desugar.jdk.libs)
 }
